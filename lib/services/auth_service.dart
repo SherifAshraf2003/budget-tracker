@@ -59,7 +59,14 @@ class AuthService {
 
   // Sign Out
   Future<void> signOut() async {
-    await _auth.signOut();
+    try {
+      await _auth.signOut();
+    } catch (e) {
+      // Even if there's an error, we want to attempt to clear the session
+      print('Error during sign out: $e');
+      // Rethrow to let the UI handle it
+      rethrow;
+    }
   }
 
   // Password Reset
