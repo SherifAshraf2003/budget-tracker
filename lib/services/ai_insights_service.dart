@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/category.dart';
 import '../models/expense.dart';
 
@@ -8,7 +9,22 @@ final aiInsightsServiceProvider = Provider<AIInsightsService>((ref) => AIInsight
 
 class AIInsightsService {
   static const String _baseUrl = 'https://openrouter.ai/api/v1';
-  static const String _apiKey = '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';
+  
+  String get _apiKey {
+    print('DEBUG: Checking for OPENROUTER_API_KEY in environment variables...');
+    print('DEBUG: Available env keys: ${dotenv.env.keys.toList()}');
+    
+    final apiKey = dotenv.env['OPENROUTER_API_KEY'];
+    print('DEBUG: Retrieved API key: ${apiKey != null ? "Found (${apiKey.length} chars)" : "Not found"}');
+    
+    if (apiKey == null || apiKey.isEmpty) {
+      print('DEBUG: API key is null or empty');
+      throw Exception('OpenRouter API key not found in environment variables.\n\nPlease ensure:\n1. .env file exists in your project root\n2. Contains: OPENROUTER_API_KEY=your_actual_key_here\n3. File is saved with UTF-8 encoding\n4. App was restarted after adding the .env file');
+    }
+    
+    print('DEBUG: API key loaded successfully');
+    return apiKey;
+  }
   
   Future<String> generateFinancialInsights({
     required List<Category> categories,
@@ -164,11 +180,20 @@ Keep the tone professional yet friendly, use specific dollar amounts from the da
       'temperature': 0.7,
     };
     
+    print('DEBUG: Making API call to OpenRouter...');
+    print('DEBUG: URL: $url');
+    print('DEBUG: Headers: $headers');
+    print('DEBUG: Body: ${json.encode(body)}');
+    
     final response = await http.post(
       url,
       headers: headers,
       body: json.encode(body),
     );
+    
+    print('DEBUG: Response status code: ${response.statusCode}');
+    print('DEBUG: Response headers: ${response.headers}');
+    print('DEBUG: Response body: ${response.body}');
     
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
